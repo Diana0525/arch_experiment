@@ -170,37 +170,23 @@ class LocalHistoryPredictor: public BranchPredictor
 		
 		BOOL predict(ADDRINT addr)
 		{
-			return bhist[truncate(addr^LHT[truncate(addr, H)].getVal(),L)].isTaken();
+			return bhist[truncate(addr^LHT[truncate(addr, HL)].getVal(),L)].isTaken();
 		}
 		
 		void update(BOOL takenActually, BOOL takenPredicted, ADDRINT addr)
 		{
-			if (takenPredicted)
+
+			if(takenActually)
 			{
-				if(takenActually)
-				{
-					bhist[truncate(addr^LHT[truncate(addr, H)].getVal(),L)].increase();
-					LHT[truncate(addr, H)].shiftIn(1);
-				}
-				else
-				{
-					bhist[truncate(addr^LHT[truncate(addr, H)].getVal(),L)].decrease();
-					LHT[truncate(addr, H)].shiftIn(0);
-				}
+				bhist[truncate(addr^LHT[truncate(addr, HL)].getVal(),L)].increase();
+				LHT[truncate(addr, HL)].shiftIn(1);
 			}
 			else
 			{
-				if (takenActually)
-				{
-					bhist[truncate(addr^LHT[truncate(addr, H)].getVal(),L)].increase();
-					LHT[truncate(addr, H)].shiftIn(1);
-				}
-				else
-				{
-					bhist[truncate(addr^LHT[truncate(addr, H)].getVal(),L)].decrease();
-					LHT[truncate(addr, H)].shiftIn(0);
-				}
+				bhist[truncate(addr^LHT[truncate(addr, HL)].getVal(),L)].decrease();
+				LHT[truncate(addr, HL)].shiftIn(0);
 			}
+
 		}
 };
 
@@ -228,23 +214,23 @@ class TournamentPredictor_GSH: public BranchPredictor
 			{
 				return BPs[1]->predict(addr);
 			}
-			else 
+			else // 选择预测结果1
 			{
 				return BPs[0]->predict(addr);
 			}
 		};
         void update(BOOL takenActually, BOOL takenPredicted, ADDRINT addr) 
 		{
-			BPs[0]->update(takenActually, takenPredicted, addr);
-			BPs[1]->update(takenActually, takenPredicted, addr);
-			if (BPs[0]->predict() == takenActually && BPs[1]->predict() != takenActually) // 只有1预测正确
+			if (BPs[0]->predict(addr) == takenActually && BPs[1]->predict(addr) != takenActually) // 只有1预测正确
 			{
 				GSHR.decrease();
 			}
-			else if (BPs[0]->predict() != takenActually && BPs[1]->predict() == takenActually)
+			else if (BPs[0]->predict(addr) != takenActually && BPs[1]->predict(addr) == takenActually)// 只有2预测正确
 			{
 				GSHR.increase();
 			}
+			BPs[0]->update(takenActually, takenPredicted, addr);
+			BPs[1]->update(takenActually, takenPredicted, addr);
 		};
 
 };
@@ -264,6 +250,30 @@ class TournamentPredictor_LSH: public BranchPredictor
         }
 
         // TODO:
+		BOOL predict(ADDRINT addr) 
+		{
+			 if (!LSHT[truncate(addr, L)].isTaken()) // LSHT[i]的最高位为1
+			 {
+				 return BPs[0]->predict(addr); // 输出子预测器1的预测结果
+			 }
+			 else
+			 {
+				 return BPs[1]->predict(addr);
+			 }
+		};
+        void update(BOOL takenActually, BOOL takenPredicted, ADDRINT addr) 
+		{
+			if (BPs[0]->predict(addr) == takenActually && BPs[1]->predict(addr) != takenActually) // 只有1预测正确
+			{
+				LSHT[truncate(addr, L)].decrease();
+			}
+			else if (BPs[0]->predict(addr) != takenActually && BPs[1]->predict(addr) == takenActually)// 只有2预测正确
+			{
+				LSHT[truncate(addr, L)].increase();
+			}
+			BPs[0]->update(takenActually, takenPredicted, addr);
+			BPs[1]->update(takenActually, takenPredicted, addr);
+		};
 };
 // 分析代码获取分支指令地址，调用分支预测器模型进行分支预测，并记录模型的预测结果数据
 // This function is called every time a control-flow instruction is encountered
@@ -345,9 +355,14 @@ int main(int argc, char * argv[])
 {
     // TODO: New your Predictor below.
     // BP = new BranchPredictor();
-	// BP = new BHTPredictor<16>();
-	// BP = new GlobalHistoryPredictor<16,16>();
-	BP = new LocalHistoryPredictor<16, 16>();
+	// BP = new BHTPredictor<19>(); // 1
+	// BP = new GlobalHistoryPredictor<19,19>(); // 2
+	BP = new LocalHistoryPredictor<19, 19>(); // 3
+	// BranchPredictor* BP_1 = new GlobalHistoryPredictor<19,19>(); // 4
+	// BranchPredictor* BP_2 = new LocalHistoryPredictor<19,19>(); // 4
+	// BP = new TournamentPredictor_GSH<>(BP_1, BP_2); // 4-1
+	// BP = new TournamentPredictor_LSH<19>(BP_1, BP_2); // 4-2
+
     // Initialize pin
     if (PIN_Init(argc, argv)) return Usage();
     
