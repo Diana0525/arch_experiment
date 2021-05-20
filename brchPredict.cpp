@@ -357,11 +357,11 @@ int main(int argc, char * argv[])
     // BP = new BranchPredictor();
 	// BP = new BHTPredictor<19>(); // 1
 	// BP = new GlobalHistoryPredictor<19,19>(); // 2
-	BP = new LocalHistoryPredictor<19, 19>(); // 3
-	// BranchPredictor* BP_1 = new GlobalHistoryPredictor<19,19>(); // 4
-	// BranchPredictor* BP_2 = new LocalHistoryPredictor<19,19>(); // 4
+	// BP = new LocalHistoryPredictor<19, 19>(); // 3
+	BranchPredictor* BP_1 = new GlobalHistoryPredictor<19,19>(); // 4
+	BranchPredictor* BP_2 = new LocalHistoryPredictor<19,19>(); // 4
 	// BP = new TournamentPredictor_GSH<>(BP_1, BP_2); // 4-1
-	// BP = new TournamentPredictor_LSH<19>(BP_1, BP_2); // 4-2
+	BP = new TournamentPredictor_LSH<19>(BP_1, BP_2); // 4-2
 
     // Initialize pin
     if (PIN_Init(argc, argv)) return Usage();
