@@ -252,7 +252,7 @@ class TournamentPredictor_LSH: public BranchPredictor
         // TODO:
 		BOOL predict(ADDRINT addr) 
 		{
-			 if (!LSHT[truncate(addr, L)].isTaken()) // LSHT[i]的最高位为1
+			 if (!LSHT[truncate(addr, L)].isTaken()) // LSHT[i]的最高位为0
 			 {
 				 return BPs[0]->predict(addr); // 输出子预测器1的预测结果
 			 }
@@ -355,8 +355,8 @@ int main(int argc, char * argv[])
 {
     // TODO: New your Predictor below.
     // BP = new BranchPredictor();
-	// BP = new BHTPredictor<19>(); // 1
-	BP = new GlobalHistoryPredictor<20,20>(); // 2
+	BP = new BHTPredictor<19>(); // 1
+	// BP = new GlobalHistoryPredictor<20,20>(); // 2
 	// BP = new LocalHistoryPredictor<20, 20>(); // 3
 	// BranchPredictor* BP_1 = new GlobalHistoryPredictor<20,20>(); // 4
 	// BranchPredictor* BP_2 = new LocalHistoryPredictor<20,20>(); // 4
